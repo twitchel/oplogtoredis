@@ -27,6 +27,7 @@ func TestInsert(t *testing.T) {
 
 		// We know this ID because we pass a fixed random seed with DDP method calls
 		harness.DDPAdded("tasks", harness.DDPFirstRandomID, harness.DDPData{
+			"_id":      harness.DDPFirstRandomID,
 			"text":     "some text",
 			"owner":    "testuser",
 			"username": "Test User",
@@ -40,6 +41,7 @@ func TestInsert(t *testing.T) {
 	// On meteor2, we should just get added
 	meteor2.VerifyReceive(t, harness.DDPMsgGroup{
 		harness.DDPAdded("tasks", harness.DDPFirstRandomID, harness.DDPData{
+			"_id":      harness.DDPFirstRandomID,
 			"text":     "some text",
 			"owner":    "testuser",
 			"username": "Test User",
