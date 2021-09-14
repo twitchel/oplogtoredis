@@ -1,5 +1,6 @@
 #!/bin/bash
 set -eu
+
 # Currently the only test is whether oplogtoredis can connect
 # to a redis instance through TLS
 
@@ -35,8 +36,8 @@ fi
 
 # INSERT DATA INTO MONGO
 docker-compose -f blackbox-tests/docker-compose.yml exec -T \
-  mongo sh -c \
-  'mongo --eval "db.products.insert( { item: \"card\", qty: 15 } )"'
+  oplogtoredis sh -c \
+  'mongo "mongodb+srv://cluster0.uq1yi.mongodb.net/myFirstDatabase?authSource=%24external&authMechanism=MONGODB-X509" --tls --tlsCertificateKeyFile /mongo-client-certs/testuser.pem --eval "db.products.insert( { item: \"card\", qty: 15 } )"'
 
 # CHECK REDIS HAS DATA
 # xargs is a hack to get rid of whitespace

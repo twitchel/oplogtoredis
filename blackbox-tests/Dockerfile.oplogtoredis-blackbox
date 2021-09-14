@@ -1,15 +1,13 @@
-FROM golang:1.17.0-alpine3.14
+FROM golang:1.17.0-buster
 
-# Install gcc, musl-dev, and sasl, which are needed to build the cgo
-# parts of the Mongo driver
-RUN apk add --no-cache --update \
-	gcc cyrus-sasl cyrus-sasl-dev musl-dev git
+# Install mongoDB client
+RUN apt-get update && apt-get install -y gnupg wget
+RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
+RUN echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" > /etc/apt/sources.list.d/mongodb-org-4.4.list
 
-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.6/main' >> /etc/apk/repositories
-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.6/community' >> /etc/apk/repositories
-RUN apk update
-RUN apk add mongodb=3.4.4-r0
+RUN apt-get update && apt-get install -y mongodb-org-shell=4.4.8 netcat && rm -rf /var/lib/apt/lists/*
 
+# Build OTR
 WORKDIR /oplogtoredis
 
 COPY main.go go.mod go.sum ./

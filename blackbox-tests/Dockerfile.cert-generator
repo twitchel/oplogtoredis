@@ -5,4 +5,6 @@ WORKDIR generate-certificates
 COPY generate-certificates.sh ./generate-certificates.sh
 CMD ./generate-certificates.sh \
   && cp -f rediscert.pem /shared-volume \
-  && cp -f ca.pem /shared-volume/ca.crt
+  && cp -f redis.key /shared-volume \
+  && cp -f redis.crt /shared-volume \
+  && cp -f ca.crt /shared-volume
