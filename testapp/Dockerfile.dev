@@ -8,7 +8,7 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/* && \
   curl https://install.meteor.com/ | sh
 
-RUN meteor create --release 2.3.6 /throwaway && rm -rf /throwaway
+RUN meteor create --release METEOR@2.4-rc.6 /throwaway && rm -rf /throwaway
 
 # Set up app
 RUN mkdir /src
