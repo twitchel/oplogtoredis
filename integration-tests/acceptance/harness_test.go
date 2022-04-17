@@ -112,7 +112,7 @@ func (h *harness) verify(t *testing.T, expectedPubs map[string][]helpers.OTRMess
 
 func (h *harness) getMongoVersion() string {
 	var commandResult bson.M
-	command := bson.D{{"serverStatus", 1}}
+	command := bson.M{"serverStatus": 1}
 	err := h.mongoClient.Client().Database("test").RunCommand(context.Background(), command).Decode(&commandResult)
 
 	if err != nil {

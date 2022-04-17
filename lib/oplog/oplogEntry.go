@@ -96,11 +96,7 @@ func (op *oplogEntry) UpdateIsV2Formatted() bool {
 	}
 
 	_, ok = op.Data["diff"]
-	if !ok {
-		return false
-	}
-
-	return true
+	return ok
 }
 
 // If this oplogEntry is for an insert, returns whether that insert is a

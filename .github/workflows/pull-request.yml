@@ -54,4 +54,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: run blackbox tests
-        run: ./scripts/runIntegrationBlackbox.sh
+        run: ./scripts/runBlackboxTests.sh
