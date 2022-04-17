@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"sort"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/vlasky/oplogtoredis/integration-tests/helpers"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -106,4 +108,16 @@ func (h *harness) verify(t *testing.T, expectedPubs map[string][]helpers.OTRMess
 	if diff := pretty.Compare(actualPubs, expectedPubs); diff != "" {
 		t.Errorf("Got incorrect publications (-got +want)\n%s", diff)
 	}
+}
+
+func (h *harness) getMongoVersion() string {
+	var commandResult bson.M
+	command := bson.D{{"serverStatus", 1}}
+	err := h.mongoClient.Client().Database("test").RunCommand(context.Background(), command).Decode(&commandResult)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return commandResult["version"].(string)
 }

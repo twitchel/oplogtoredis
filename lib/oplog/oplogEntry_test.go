@@ -187,6 +187,50 @@ func TestChangedFields(t *testing.T) {
 			},
 			want: []string{"foo"},
 		},
+
+		"Update v2": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v": 2,
+					"diff": map[string]interface{}{
+						"i":       map[string]interface{}{"a": 1, "b": "2"},
+						"u":       map[string]interface{}{"c": 1, "d": "2"},
+						"d":       map[string]interface{}{"e": 1, "f": "2"},
+						"sg":      10,
+						"sfoobar": map[string]interface{}{},
+					},
+				},
+			},
+			want: []string{"a", "b", "c", "d", "e", "f", "g", "foobar"},
+		},
+
+		"Update v2, no operations": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v":   2,
+					"diff": map[string]interface{}{},
+				},
+			},
+			want: []string{},
+		},
+
+		"Update v2, unexpected operation value type": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v":    2,
+					"weird": "thing",
+					"diff": map[string]interface{}{
+						"i":          10,
+						"otherwierd": "thing",
+						"sfoo":       "bar",
+					},
+				},
+			},
+			want: []string{"foo"},
+		},
 	}
 
 	for name, test := range tests {
@@ -235,6 +279,59 @@ func TestMapKeys(t *testing.T) {
 
 			if !reflect.DeepEqual(got, test.want) {
 				t.Errorf("mapKeys(%#v) = %v, want %v", test.input, got, test.want)
+			}
+		})
+	}
+}
+
+func TestUpdateIsV2Formatted(t *testing.T) {
+	tests := map[string]struct {
+		in             map[string]interface{}
+		expectedResult bool
+	}{
+		"no $v": {
+			in: map[string]interface{}{
+				"diff": map[string]interface{}{"sa": "123"},
+			},
+			expectedResult: false,
+		},
+		"$v 1": {
+			in: map[string]interface{}{
+				"$v":   1,
+				"diff": map[string]interface{}{"sa": "123"},
+			},
+			expectedResult: false,
+		},
+		"$v is string": {
+			in: map[string]interface{}{
+				"$v":   "2",
+				"diff": map[string]interface{}{"sa": "123"},
+			},
+			expectedResult: false,
+		},
+		"no diff": {
+			in: map[string]interface{}{
+				"$v":   2,
+				"$set": map[string]interface{}{"a": "123"},
+			},
+			expectedResult: false,
+		},
+		"valid v2 format": {
+			in: map[string]interface{}{
+				"$v":   2,
+				"diff": map[string]interface{}{"sa": "123"},
+			},
+			expectedResult: true,
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			got := (&oplogEntry{Data: test.in}).UpdateIsV2Formatted()
+
+			if got != test.expectedResult {
+				t.Errorf("UpdateIsV2Formatted(%#v) = %t; want %t",
+					test.in, got, test.expectedResult)
 			}
 		})
 	}
