@@ -1,12 +1,13 @@
 package harness
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/vlasky/oplogtoredis/integration-tests/helpers"
 )
 
@@ -21,19 +22,19 @@ type RedisVerifier struct {
 // NewRedisVerifier creates a RedisVerifier and starts reading messages from
 // Redis
 func NewRedisVerifier(client redis.UniversalClient, stopReceivingOnError bool) *RedisVerifier {
-	if pingErr := client.Ping().Err(); pingErr != nil {
+	if pingErr := client.Ping(context.Background()).Err(); pingErr != nil {
 		panic("Ping error to redis: " + pingErr.Error())
 	}
 
 	verifier := RedisVerifier{
 		client:      client,
 		receivedIDs: make(chan string, 100),
-		pubsub:      client.Subscribe("testdb.Test"),
+		pubsub:      client.Subscribe(context.Background(), "testdb.Test"),
 	}
 
 	go func() {
 		for {
-			msg, err := verifier.pubsub.ReceiveMessage()
+			msg, err := verifier.pubsub.ReceiveMessage(context.Background())
 			if err != nil {
 				log.Printf("Error receiving pubsub message: %s", err.Error())
 				if stopReceivingOnError {
