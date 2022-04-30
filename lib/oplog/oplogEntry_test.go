@@ -1,9 +1,13 @@
 package oplog
 
 import (
+	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"testing"
+
+	"github.com/vlasky/oplogtoredis/lib/config"
 )
 
 func TestCategorization(t *testing.T) {
@@ -109,8 +113,9 @@ func TestUpdateIsReplace(t *testing.T) {
 
 func TestChangedFields(t *testing.T) {
 	tests := map[string]struct {
-		input *oplogEntry
-		want  []string
+		input                           *oplogEntry
+		want                            []string
+		enableV2ExtractDeepFieldChanges bool
 	}{
 		"Insert": {
 			input: &oplogEntry{
@@ -205,6 +210,24 @@ func TestChangedFields(t *testing.T) {
 			want: []string{"a", "b", "c", "d", "e", "f", "g", "foobar"},
 		},
 
+		"Update v2 deep": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v": 2,
+					"diff": map[string]interface{}{
+						"i":       map[string]interface{}{"a": 1, "b": "2"},
+						"u":       map[string]interface{}{"c": 1, "d": "2"},
+						"d":       map[string]interface{}{"e": 1, "f": "2"},
+						"sg":      map[string]interface{}{},
+						"sfoobar": map[string]interface{}{},
+					},
+				},
+			},
+			want:                            []string{"a", "b", "c", "d", "e", "f"},
+			enableV2ExtractDeepFieldChanges: true,
+		},
+
 		"Update v2, no operations": {
 			input: &oplogEntry{
 				Operation: "u",
@@ -214,6 +237,18 @@ func TestChangedFields(t *testing.T) {
 				},
 			},
 			want: []string{},
+		},
+
+		"Update v2, no operations deep": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v":   2,
+					"diff": map[string]interface{}{},
+				},
+			},
+			want:                            []string{},
+			enableV2ExtractDeepFieldChanges: true,
 		},
 
 		"Update v2, unexpected operation value type": {
@@ -231,10 +266,35 @@ func TestChangedFields(t *testing.T) {
 			},
 			want: []string{"foo"},
 		},
+
+		"Update v2, unexpected operation value type deep": {
+			input: &oplogEntry{
+				Operation: "u",
+				Data: map[string]interface{}{
+					"$v":    2,
+					"weird": "thing",
+					"diff": map[string]interface{}{
+						"i":          10,
+						"otherwierd": "thing",
+						"sfoo":       map[string]interface{}{"u": map[string]interface{}{"x": "10"}},
+					},
+				},
+			},
+			want:                            []string{"foo.x"},
+			enableV2ExtractDeepFieldChanges: true,
+		},
 	}
 
 	for name, test := range tests {
+
 		t.Run(name, func(t *testing.T) {
+			os.Setenv("OTR_OPLOG_V2_EXTRACT_SUBFIELD_CHANGES", strconv.FormatBool(test.enableV2ExtractDeepFieldChanges))
+			os.Setenv("OTR_REDIS_URL", "redis://yyy")
+			os.Setenv("OTR_MONGO_URL", "mongodb://xxx")
+			if config.ParseEnv() != nil {
+				t.Errorf("Failed to parse env with subfield setting %t", test.enableV2ExtractDeepFieldChanges)
+			}
+
 			got := test.input.ChangedFields()
 
 			sort.Strings(got)
