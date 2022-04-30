@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/vlasky/oplogtoredis/integration-tests/helpers"
@@ -129,41 +128,19 @@ func TestUpdateArraySet(t *testing.T) {
 		panic(err)
 	}
 
-	// We switch on mongo version: for v5, we expect simplified fields (just
-	// top-level changes)
-	var expectedMessage1 helpers.OTRMessage
-	var expectedMessage2 helpers.OTRMessage
-
-	if strings.HasPrefix(harness.getMongoVersion(), "5.") {
-		expectedMessage1 = helpers.OTRMessage{
-			Event: "u",
-			Document: map[string]interface{}{
-				"_id": "someid",
-			},
-			Fields: []string{"hello"},
-		}
-		expectedMessage2 = helpers.OTRMessage{
-			Event: "u",
-			Document: map[string]interface{}{
-				"_id": "someid2",
-			},
-			Fields: []string{"hello"},
-		}
-	} else {
-		expectedMessage1 = helpers.OTRMessage{
-			Event: "u",
-			Document: map[string]interface{}{
-				"_id": "someid",
-			},
-			Fields: []string{"hello.1.value"},
-		}
-		expectedMessage2 = helpers.OTRMessage{
-			Event: "u",
-			Document: map[string]interface{}{
-				"_id": "someid2",
-			},
-			Fields: []string{"hello.2.value"},
-		}
+	expectedMessage1 := helpers.OTRMessage{
+		Event: "u",
+		Document: map[string]interface{}{
+			"_id": "someid",
+		},
+		Fields: []string{"hello.1.value"},
+	}
+	expectedMessage2 := helpers.OTRMessage{
+		Event: "u",
+		Document: map[string]interface{}{
+			"_id": "someid2",
+		},
+		Fields: []string{"hello.2.value"},
 	}
 
 	harness.verify(t, map[string][]helpers.OTRMessage{

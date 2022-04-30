@@ -1,8 +1,6 @@
 package oplog
 
 import (
-	"strings"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/vlasky/oplogtoredis/lib/log"
@@ -121,51 +119,7 @@ func (op *oplogEntry) ChangedFields() []string {
 	} else if op.IsUpdate() && op.UpdateIsV2Formatted() {
 		// New-style update. Looks like:
 		// { $v: 2, diff: { sa: "10", sb: "20", d: { c: true  } }
-		diff, ok := op.Data["diff"]
-		if !ok {
-			metricUnprocessableChangedFields.Inc()
-			log.Log.Errorw("Oplog data for non-replacement v2 update did not have a diff field",
-				"op", op)
-			return []string{}
-		}
-
-		diffMap, ok := diff.(map[string]interface{})
-		if !ok {
-			metricUnprocessableChangedFields.Inc()
-			log.Log.Errorw("Oplog data for non-replacement v2 update had a diff that was not a map",
-				"op", op)
-			return []string{}
-		}
-
-		fields := []string{}
-		for operationKey, operation := range diffMap {
-			if operationKey == "i" || operationKey == "u" || operationKey == "d" {
-				// indicates an insert, update, or delete of a whole subtree
-				operationMap, operationMapOK := operation.(map[string]interface{})
-				if !operationMapOK {
-					metricUnprocessableChangedFields.Inc()
-					log.Log.Errorw("Oplog data for non-replacement v2 update contained a i/u/d key with a non-map value",
-						"op", op)
-					continue
-				}
-
-				fields = append(fields, mapKeys(operationMap)...)
-			} else if strings.HasPrefix(operationKey, "s") {
-				// indicates a sub-field set
-				fields = append(fields, strings.TrimPrefix(operationKey, "s"))
-			} else if operationKey == "a" || strings.HasPrefix(operationKey, "o") {
-				// ignore
-				continue
-			} else {
-				metricUnprocessableChangedFields.Inc()
-				log.Log.Errorw("Oplog data for non-replacement v2 update contained a field that was not an i/u/d or an s-prefixed field",
-					"op", op)
-				continue
-			}
-
-		}
-
-		return fields
+		return getChangedFieldsFromOplogV2Update(op)
 	} else if op.IsUpdate() {
 		// Old-style update. Looks like:
 		// { $v: 1, $set: { "a": 10, "b": 20 }, $unset: { "c": true } }

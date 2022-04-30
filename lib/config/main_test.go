@@ -14,24 +14,26 @@ var envTests = map[string]struct {
 }{
 	"Full env": {
 		env: map[string]string{
-			"OTR_REDIS_URL":                "redis://something",
-			"OTR_MONGO_URL":                "mongodb://something",
-			"OTR_HTTP_SERVER_ADDR":         "localhost:1234",
-			"OTR_BUFFER_SIZE":              "10",
-			"OTR_TIMESTAMP_FLUSH_INTERVAL": "10m",
-			"OTR_MAX_CATCH_UP":             "0",
-			"OTR_REDIS_DEDUPE_EXPIRATION":  "12s",
-			"OTR_REDIS_METADATA_PREFIX":    "someprefix.",
+			"OTR_REDIS_URL":                         "redis://something",
+			"OTR_MONGO_URL":                         "mongodb://something",
+			"OTR_HTTP_SERVER_ADDR":                  "localhost:1234",
+			"OTR_BUFFER_SIZE":                       "10",
+			"OTR_TIMESTAMP_FLUSH_INTERVAL":          "10m",
+			"OTR_MAX_CATCH_UP":                      "0",
+			"OTR_REDIS_DEDUPE_EXPIRATION":           "12s",
+			"OTR_REDIS_METADATA_PREFIX":             "someprefix.",
+			"OTR_OPLOG_V2_EXTRACT_SUBFIELD_CHANGES": "true",
 		},
 		expectedConfig: &oplogtoredisConfiguration{
-			RedisURL:               "redis://something",
-			MongoURL:               "mongodb://something",
-			HTTPServerAddr:         "localhost:1234",
-			BufferSize:             10,
-			TimestampFlushInterval: 10 * time.Minute,
-			MaxCatchUp:             0,
-			RedisDedupeExpiration:  12 * time.Second,
-			RedisMetadataPrefix:    "someprefix.",
+			RedisURL:                      "redis://something",
+			MongoURL:                      "mongodb://something",
+			HTTPServerAddr:                "localhost:1234",
+			BufferSize:                    10,
+			TimestampFlushInterval:        10 * time.Minute,
+			MaxCatchUp:                    0,
+			RedisDedupeExpiration:         12 * time.Second,
+			RedisMetadataPrefix:           "someprefix.",
+			OplogV2ExtractSubfieldChanges: true,
 		},
 	},
 	"Minimal env": {
@@ -40,14 +42,15 @@ var envTests = map[string]struct {
 			"OTR_MONGO_URL": "mongodb://xxx",
 		},
 		expectedConfig: &oplogtoredisConfiguration{
-			RedisURL:               "redis://yyy",
-			MongoURL:               "mongodb://xxx",
-			HTTPServerAddr:         "0.0.0.0:9000",
-			BufferSize:             10000,
-			TimestampFlushInterval: time.Second,
-			MaxCatchUp:             time.Minute,
-			RedisDedupeExpiration:  2 * time.Minute,
-			RedisMetadataPrefix:    "oplogtoredis::",
+			RedisURL:                      "redis://yyy",
+			MongoURL:                      "mongodb://xxx",
+			HTTPServerAddr:                "0.0.0.0:9000",
+			BufferSize:                    10000,
+			TimestampFlushInterval:        time.Second,
+			MaxCatchUp:                    time.Minute,
+			RedisDedupeExpiration:         2 * time.Minute,
+			RedisMetadataPrefix:           "oplogtoredis::",
+			OplogV2ExtractSubfieldChanges: false,
 		},
 	},
 	"Missing redis URL": {
@@ -146,5 +149,10 @@ func checkConfigExpectation(t *testing.T, expectedConfig *oplogtoredisConfigurat
 	if expectedConfig.RedisMetadataPrefix != RedisMetadataPrefix() {
 		t.Errorf("Incorrect RedisMetadataPrefix. Got \"%s\", Expected \"%s\"",
 			expectedConfig.RedisMetadataPrefix, RedisMetadataPrefix())
+	}
+
+	if expectedConfig.OplogV2ExtractSubfieldChanges != OplogV2ExtractSubfieldChanges() {
+		t.Errorf("Incorrect OplogV2ExtractSubfieldChanges. Got \"%t\", Expected \"%t\"",
+			expectedConfig.OplogV2ExtractSubfieldChanges, OplogV2ExtractSubfieldChanges())
 	}
 }
