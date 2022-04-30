@@ -10,7 +10,7 @@ import (
 
 // Translated from https://github.com/meteor/meteor/blob/devel/packages/mongo/oplog_v2_converter.js
 
-var arrayIndexOperatorKeyRegex = regexp.MustCompile("^u\\d+")
+var arrayIndexOperatorKeyRegex = regexp.MustCompile(`^u\d+`)
 
 func isArrayOperator(possibleArrayOperator interface{}) bool {
 	if possibleArrayOperator == nil {
